@@ -11,9 +11,9 @@
 //info: https://github.com/mqtt/mqtt.github.io/wiki/public_brokers
 //static const char* mqtt_server[] = {"157.230.174.83", "test.mosquitto.org", "iot.eclipse.org", "broker.hivemq.com", "www.cloudmqtt.com", "mqtt.swifitch.cz", "mqtt.fluux.io", "console.solace.cloud"};
 
-#define outTopic "droneFenix/2/estacion1"
-#define inTopic "droneFenix/2/estacion1IN"
-#define wiFiname "AirQ_droneFenix/2/estacion1"
+#define outTopic "/Demo/Cens/Output"
+#define inTopic "/Demo/Cens/Input"
+#define wiFiname "Cens_Cucuta_IoT_Module_1"
 
 #define ledWarning led_builtin
 #define chipSelect D4

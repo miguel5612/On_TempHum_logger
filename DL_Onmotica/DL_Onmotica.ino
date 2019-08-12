@@ -12,6 +12,10 @@
 //needed for library
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
+//Sensor library
+#include "DHT.h"
+#define DHTPIN 2     // what digital pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 
 SERIAL_COMMUNICATION serial;
 PROCESS_DATA procesamiento;
@@ -19,6 +23,7 @@ WIFI_PROCESS WiFiProcess;
 MEMORY_ADMINISTRATION administracion;
 PINS pinesIO;
 onmotica utils;
+DHT dht(DHTPIN, DHTTYPE);
 
 static const int count_mqtt_server = 3;
 static char* mqtt_server[count_mqtt_server] = { "mqtt.onmotica.com", "mqtt2.onmotica.com", "mqtt3.onmotica.com"};
@@ -47,7 +52,7 @@ void setup() {
     setMQTTServer();
 
     procesamiento.setTimeToWait(procesamiento.generateRandom());
-    
+    dht.begin();    
 }
 
 
@@ -57,39 +62,26 @@ void loop() {
     if (!mqttIsConnected()) reconnect(); //Reconectar mqtt si perdio conexion
 
     
-    String informacion = serial.leerArduino();
-    if(procesamiento.procesarInformacion(informacion))
+    float humedad = dht.readHumidity();
+    // Read temperature as Celsius (the default)
+    float temperatura = dht.readTemperature();
+
+    //Calcular y guardar la fecha
+    String fecha = utils.getTime();
+    procesamiento.setFecha(fecha);
+
+    //Mensaje MQTT
+
+    String json2MQTT = procesamiento.ensamblarMensajeJSON(temperatura, humedad, 0, 0, 0, 0, 0, 0, 0, 0, fecha);
+
+    if(procesamiento.SAVEJSON(json2MQTT))
     {
-      //Calcular y guardar la fecha
-      String fecha = utils.getTime();
-      procesamiento.setFecha(fecha);
-      //Si la informacion es valida se debe proceder a guardar en la SD y enviar al MQTT server
-      String lineaSDCard = procesamiento.mensajeSDTabulado();
-      memoriaSD.guardarInfo(lineaSDCard);
-      if(serDebug) Serial.println("Guardado en la sd: " + lineaSDCard);
-      
-      //Mensaje MQTT
-      double temperatura = procesamiento.leerTemperatura();
-      double humedad = procesamiento.leerHumedad();
-      double presionAmosferica = procesamiento.leerPresionAtmosferica();
-      int tvoc =  procesamiento.leerTVOC();
-      int co2 = procesamiento.leerCO2();
-      int alcohol = procesamiento.leerAlcohol();
-      int metano = procesamiento.leerMetano();
-      int NH4 = procesamiento.leerNH4();
-      float latitud = procesamiento.leerLatitud();
-      float longitud = procesamiento.leerLongitud();
-
-      String json2MQTT = procesamiento.ensamblarMensajeJSON(temperatura, humedad, presionAmosferica, alcohol, tvoc, co2, metano, NH4, latitud, longitud, fecha);
-
-      if(procesamiento.SAVEJSON(json2MQTT))
-      {
-        procesamiento.setTimeToWait(procesamiento.generateRandom());
-        sendMQTTMsgPacket(procesamiento.getIndex());
-      }
-
+      procesamiento.setTimeToWait(procesamiento.generateRandom());
+      sendMQTTMsgPacket(procesamiento.getIndex());
     }
     
+    delay(1000); //Min delay for next measure
+
     if((millis() - lastPublishedTime)>maxTimeWithNoPublish)  memoriaSD.saveIntoLogMsg("Han pasado " + String(maxTimeWithNoPublish/60000) + " minutos sin enviar actualizaciones" , administracion.freeSpaceReportSerial() , WiFiProcess.wifiIsConnected()?"Conectado":"Desconectado", mqttIsConnected()?"Conectado":"Desconectado", true);   
     if((millis() -lastGetPetition)>maxTimeWithNoPublish) WiFiProcess.getPetition(URL); //Despertar al servidor haciendo una peticion cada media hora
     mqttClient.loop();
