@@ -57,7 +57,9 @@ String PROCESS_DATA::ensamblarMensajeJSON(double temp, double hum, double presAl
     // Inside the brackets, 200 is the size of the pool in bytes.
     // Don't forget to change this value to match your JSON document.
     // Use arduinojson.org/assistant to compute the capacity.
-    DynamicJsonBuffer jsonBuffer(260);
+    // allocate the memory for the document
+    const size_t CAPACITY = JSON_OBJECT_SIZE(11);
+    StaticJsonDocument<CAPACITY> jsonBuffer;
     // StaticJsonBuffer allocates memory on the stack, it can be
     // replaced by DynamicJsonBuffer which allocates in the heap.
     //
@@ -68,7 +70,8 @@ String PROCESS_DATA::ensamblarMensajeJSON(double temp, double hum, double presAl
     // It's a reference to the JsonObject, the actual bytes are inside the
     // JsonBuffer with all the other nodes of the object tree.
     // Memory is freed when jsonBuffer goes out of scope.
-    JsonObject& root = jsonBuffer.createObject();         
+    // create an object
+    JsonObject root = jsonBuffer.to<JsonObject>();    
     root["D1"] = temp;  
     root["D2"] = hum; 
     root["D3"] = presAlt;  
@@ -84,7 +87,8 @@ String PROCESS_DATA::ensamblarMensajeJSON(double temp, double hum, double presAl
     root["D11"] = fecha;
         
     char JSONmessageBuffer[260];
-    root.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+    //root.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+    serializeJson(root, JSONmessageBuffer);
     return JSONmessageBuffer;
 }
 

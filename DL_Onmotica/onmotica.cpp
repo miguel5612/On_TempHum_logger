@@ -2,7 +2,7 @@
 #include "configuration.h"
 #include <time.h>
 
-String SD_PROCESS::getTime()
+String onmotica::getTime()
 {
       time_t now = time(nullptr);
       struct tm* p_tm = localtime(&now);
