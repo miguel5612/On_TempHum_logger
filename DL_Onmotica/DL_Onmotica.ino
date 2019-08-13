@@ -49,6 +49,7 @@ void setup() {
     if(serDebug) Serial.println("Peticion get - " + resultPetition);
     
     setMQTTServer();
+    utils.init();
 
     procesamiento.setTimeToWait(procesamiento.generateRandom());
     dht.begin();    
@@ -68,6 +69,7 @@ void loop() {
     //Calcular y guardar la fecha
     String fecha = utils.getTime();
     procesamiento.setFecha(fecha);
+    Serial.println(fecha);
 
     //Mensaje MQTT
 

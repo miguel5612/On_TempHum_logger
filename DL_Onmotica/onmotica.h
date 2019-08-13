@@ -5,6 +5,7 @@
 
 class onmotica {
   public:
+    void init();
     String getTime();
   private:
     String __fecha;
